@@ -1,8 +1,8 @@
 <!-- https://freesound.org/people/deleted_user_2731495/sounds/183881/ -->
 <audio id="introSong" src="assets/sounds/menu.ogg" loop></audio>
 
-{% set firestore = true and 'moonrider-prod' or 'moonrider-dev' %}
-{% set firekey = true and 'AIzaSyAilakXLvMgwPcBcHs3oys51eLp4yrfz0w' or 'AIzaSyALCaDKg0b7aD3nOyRv_f5RTZ1vedrGyWw' %}
+{% set firestore = 'rirak-moonrider' %}
+{% set firekey = 'AIzaSyCGNcoZrobnx9848A9f0OgfaR9mkiLlUvc' %}
 
 <a-scene
   bind__beat-generator="challengeId: challenge.id; difficulty: challenge.difficulty; beatmapCharacteristic: challenge.beatmapCharacteristic; gameMode: gameMode; has3DOFVR: has3DOFVR; hasSongLoadError: hasSongLoadError; isPlaying: isPlaying; isZipFetching: isZipFetching; menuSelectedChallengeId: menuSelectedChallenge.id; songDuration: challenge.metadata.duration; speed: speed"
