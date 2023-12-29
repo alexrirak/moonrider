@@ -20,6 +20,8 @@ AFRAME.registerComponent('leaderboard', {
     projectId: {type: 'string'},
     storageBucket: {type: 'string'},
     messagingSenderId: {type: 'string'},
+    appId: {type: 'string'},
+    captchaKey: {type: 'string'},
 
     challengeId: {default: ''},
     difficulty: {default: ''},
@@ -67,7 +69,8 @@ update: function (oldData) {
     databaseURL: this.data.databaseURL,
     projectId: this.data.projectId,
     storageBucket: this.data.storageBucket,
-    messagingSenderId: this.data.messagingSenderId
+    messagingSenderId: this.data.messagingSenderId,
+    appId: this.data.appId
   };
   if (!firebase.apps.length && this.data.apiKey) {
     const firebaseApp = firebase.initializeApp(firebaseConfig);
@@ -75,7 +78,7 @@ update: function (oldData) {
     if (firebaseApp) {
       // Initialize Firebase App Check
       const appCheck = firebase.appCheck()
-      appCheck.activate('6LcedT8pAAAAAOl8fDXSXpn2FKgjaUq3r8nKigcS', true)
+      appCheck.activate(this.data.captchaKey, true)
     }
 
 
