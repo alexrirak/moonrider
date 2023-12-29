@@ -1,7 +1,6 @@
+import 'firebase/compat/app-check';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
-import 'firebase/compat/app-check'
-// import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 const pr = require('profane-words');
 
 const NUM_SCORES_DISPLAYED = 10;
