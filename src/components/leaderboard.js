@@ -1,6 +1,8 @@
-const firebase = require('firebase/app');
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+import 'firebase/compat/app-check'
+// import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 const pr = require('profane-words');
-require('firebase/firestore');
 
 const NUM_SCORES_DISPLAYED = 10;
 const ba = /(fuc)|(ass)|(nig)|(shit)|(retard)/gi;
@@ -29,13 +31,21 @@ AFRAME.registerComponent('leaderboard', {
     isVictory: {default: false}
   },
 
+  /**
+   * `init` function sets up initial state and variables.
+   * Called once when the component is initialized.
+   */
   init: function () {
+    // Set initial state for leaderboard variables
     this.qualifyingIndex = undefined;
     this.scores = [];
     this.eventDetail = {scores: this.scores};
     this.addEventDetail = {scoreData: undefined, index: undefined};
 
+    // Retrieve username from local storage or set default
     this.username = localStorage.getItem('moonriderusername') || 'Super Zealot';
+
+    // Event listeners for updating username and submitting score
     this.el.addEventListener('leaderboardusername', evt => {
       this.username = evt.detail.value;
       localStorage.setItem('moonriderusername', this.username);
@@ -43,42 +53,63 @@ AFRAME.registerComponent('leaderboard', {
     this.el.addEventListener('leaderboardsubmit', this.addScore.bind(this));
   },
 
-  update: function (oldData) {
-    // Initialize Cloud Firestore through Firebase.
-    if (!firebase.apps.length && this.data.apiKey) {
-      firebase.initializeApp({
-        apiKey: this.data.apiKey,
-        authDomain: this.data.authDomain,
-        databaseURL: this.data.databaseURL,
-        projectId: this.data.projectId,
-        storageBucket: this.data.storageBucket,
-        messagingSenderId: this.data.messagingSenderId
-      });
-      this.firestore = firebase.firestore();
-      this.firestore.settings({});
-      this.db = this.firestore.collection('scores');
+/**
+ * Called both when the component is initialized and whenever any of the component’s properties is updated
+ * Handles connection to Firebase for the leaderboard
+ * Fetches latest scores for the selected challenge/difficulty and checks if the score qualifies for the leaderboard
+ *
+ * @param {Object} oldData - The previous data of the component.
+ */
+update: function (oldData) {
+  // Initialize Cloud Firestore through Firebase.
+  const firebaseConfig = {
+    apiKey: this.data.apiKey,
+    authDomain: this.data.authDomain,
+    databaseURL: this.data.databaseURL,
+    projectId: this.data.projectId,
+    storageBucket: this.data.storageBucket,
+    messagingSenderId: this.data.messagingSenderId
+  };
+  if (!firebase.apps.length && this.data.apiKey) {
+    const firebaseApp = firebase.initializeApp(firebaseConfig);
+
+    if (firebaseApp) {
+      // Initialize Firebase App Check
+      const appCheck = firebase.appCheck()
+      appCheck.activate('6LcedT8pAAAAAOl8fDXSXpn2FKgjaUq3r8nKigcS', true)
     }
 
-    if (!oldData.isVictory && this.data.isVictory) {
-      this.checkLeaderboardQualify();
-    }
 
-    if (this.data.difficulty && oldData.difficulty !== this.data.difficulty) {
-      this.fetchScores(this.data.menuSelectedChallengeId);
-      return;
-    }
+    this.firestore = firebase.firestore();
+    this.firestore.settings({});
+    this.db = this.firestore.collection('scores');
 
-    if (this.data.menuSelectedChallengeId &&
-      oldData.menuSelectedChallengeId !== this.data.menuSelectedChallengeId) {
-      this.fetchScores(this.data.menuSelectedChallengeId);
-      return;
-    }
+  }
 
-    if (this.data.challengeId && oldData.challengeId !== this.data.challengeId) {
-      this.fetchScores(this.data.challengeId);
-      return;
-    }
-  },
+  // Check if the game state has changed from not being a victory to being a victory
+  if (!oldData.isVictory && this.data.isVictory) {
+    this.checkLeaderboardQualify();
+  }
+
+  // If the difficulty has changed, fetch the scores for the selected challenge
+  if (this.data.difficulty && oldData.difficulty !== this.data.difficulty) {
+    this.fetchScores(this.data.menuSelectedChallengeId);
+    return;
+  }
+
+  // If the selected challenge has changed, fetch the scores for the new challenge
+  if (this.data.menuSelectedChallengeId &&
+    oldData.menuSelectedChallengeId !== this.data.menuSelectedChallengeId) {
+    this.fetchScores(this.data.menuSelectedChallengeId);
+    return;
+  }
+
+  // If the challenge ID has changed, fetch the scores for the new challenge
+  if (this.data.challengeId && oldData.challengeId !== this.data.challengeId) {
+    this.fetchScores(this.data.challengeId);
+    return;
+  }
+},
 
   addScore: function () {
     const state = this.el.sceneEl.systems.state.state;

@@ -313,6 +313,7 @@ AFRAME.registerState({
       state.score.rank = 'A';
       state.score.score = 9001;
       state.introActive = false;
+      state.gameMode = 'classic';
       computeBeatsText(state);
     },
 
