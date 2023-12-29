@@ -3,6 +3,8 @@
 
 {% set firestore = 'rirak-moonrider' %}
 {% set firekey = 'AIzaSyCGNcoZrobnx9848A9f0OgfaR9mkiLlUvc' %}
+{% set fireappid = '1:676263376432:web:b88bdfc996872b7f125ff5' %}
+{% set captchaKey = '6LcedT8pAAAAAOl8fDXSXpn2FKgjaUq3r8nKigcS' %}
 
 <a-scene
   bind__beat-generator="challengeId: challenge.id; difficulty: challenge.difficulty; beatmapCharacteristic: challenge.beatmapCharacteristic; gameMode: gameMode; has3DOFVR: has3DOFVR; hasSongLoadError: hasSongLoadError; isPlaying: isPlaying; isZipFetching: isZipFetching; menuSelectedChallengeId: menuSelectedChallenge.id; songDuration: challenge.metadata.duration; speed: speed"
@@ -29,7 +31,7 @@
   {% if DEBUG_INSPECTOR %}
     inspector="url: http://localhost:3333/dist/aframe-inspector.js"
   {% endif %}
-  leaderboard="apiKey: {{ firekey }}; authDomain: {{ firestore }}.firebaseapp.com; databaseURL: https://{{ firestore }}.firebaseio.com; projectId: {{ firestore }}; storageBucket: {{ firestore }}.appspot.com; messagingSenderId: 676263376432"
+  leaderboard="apiKey: {{ firekey }}; authDomain: {{ firestore }}.firebaseapp.com; databaseURL: https://{{ firestore }}.firebaseio.com; projectId: {{ firestore }}; storageBucket: {{ firestore }}.appspot.com; messagingSenderId: 676263376432; appId: {{ fireappid }}; captchaKey: {{ captchaKey }}"
   loading-screen="backgroundColor: #000"
   pool__beat-arrow-blue="mixin: arrowBlueBeat; size: 30; container: #beatContainer; dynamic: true"
   pool__beat-arrow-red="mixin: arrowRedBeat; size: 30; container: #beatContainer; dynamic: true"
