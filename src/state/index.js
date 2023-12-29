@@ -457,12 +457,17 @@ AFRAME.registerState({
      * Insert new score into leaderboard locally.
      */
     leaderboardscoreadded: (state, payload) => {
-      // Insert.
-      for (let i = 0; i < state.leaderboard.length; i++) {
-        if (payload.scoreData.score >= state.leaderboard[i].score ||
-          i >= state.leaderboard.length - 1) {
-          state.leaderboard.splice(i, 0, payload.scoreData);
-          break;
+      // If leaderboard is empty, add the score directly
+      if (state.leaderboard.length === 0) {
+        state.leaderboard.push(payload.scoreData);
+      } else {
+        // Insert.
+        for (let i = 0; i < state.leaderboard.length; i++) {
+          if (payload.scoreData.score >= state.leaderboard[i].score ||
+              i >= state.leaderboard.length - 1) {
+            state.leaderboard.splice(i, 0, payload.scoreData);
+            break;
+          }
         }
       }
 
