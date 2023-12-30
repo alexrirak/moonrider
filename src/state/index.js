@@ -116,6 +116,12 @@ AFRAME.registerState({
     leaderboardQualified: false,
     leaderboardNames: '',
     leaderboardScores: '',
+    leaderboardMaxStreaks: [],
+    leaderboardMaxStreaksFetched: false,
+    leaderboardMaxStreaksQualified: false,
+    leaderboardMaxStreaksNames: '',
+    leaderboardMaxStreaksScores: '',
+    leaderboardDisplayMode: 'SCORE',
     mainMenuActive: false,
     menuActive: SKIP_INTRO, // Main menu active.
     menuDifficulties: [],
@@ -135,7 +141,6 @@ AFRAME.registerState({
       songDuration: 0,
       songInfoText: '',
       songLength: undefined,
-      numBeats: undefined,
       songName: '',
       songSubName: '',
       version: '',
@@ -305,6 +310,7 @@ AFRAME.registerState({
       Object.assign(state.challenge, DEBUG_CHALLENGE);
       state.isVictory = true;
       state.leaderboardQualified = true;
+      state.leaderboardMaxStreaksQualified = true;
       state.menuActive = false;
       state.score.accuracy = 74.99;
       state.score.beatsHit = 125;
@@ -381,6 +387,7 @@ AFRAME.registerState({
       state.isLoading = true;
       state.isVictory = false;
       state.leaderboardQualified = false;
+      state.leaderboardMaxStreaksQualified = false;
     },
 
     gamemenuexit: state => {
@@ -396,6 +403,7 @@ AFRAME.registerState({
       state.menuSelectedChallenge.difficultyId = state.challenge.difficultyId;
       state.challenge.id = '';
       state.leaderboardQualified = false;
+      state.leaderboardMaxStreaksQualified = false;
     },
 
     gamemode: (state, mode) => {
@@ -485,6 +493,59 @@ AFRAME.registerState({
       state.leaderboardQualified = false;
     },
 
+    leaderboardmaxstreakssubmit: state => {
+      state.leaderboardMaxStreaksQualified = false;
+    },
+
+    leaderboardUpdateDisplayMode: (state, payload) => {
+      state.leaderboardDisplayMode = payload;
+    },
+
+    leaderboardMaxStreaks: (state, payload) => {
+      state.leaderboardMaxStreaks.length = 0;
+      state.leaderboardMaxStreaksFetched = true;
+      state.leaderboardMaxStreaksNames = '';
+      state.leaderboardMaxStreaksScores = '';
+      for (let i = 0; i < payload.maxStreaks.length; i++) {
+        let record = payload.maxStreaks[i];
+        state.leaderboardMaxStreaks.push(record);
+        state.leaderboardMaxStreaksNames += `#${i + 1} ${truncate(record.username, 18)} (${Math.round(record.accuracy || 0)}%)\n`;
+        state.leaderboardMaxStreaksScores += `${record.maxStreak}\n`;
+      }
+      state.leaderboardMaxStreaksLoading = false;
+    },
+
+    leaderboardmaxstreaksqualify: state => {
+        if (!state.has6DOFVR) {
+            return;
+        }
+        state.leaderboardMaxStreaksQualified = true;
+    },
+
+    leaderboardmaxstreakadded: (state, payload) => {
+      // If leaderboard is empty, add the score directly
+      if (state.leaderboardMaxStreaks.length === 0) {
+        state.leaderboardMaxStreaks.push(payload.maxStreakData);
+      } else {
+        // Insert.
+        for (let i = 0; i < state.leaderboardMaxStreaks.length; i++) {
+          if (payload.maxStreakData.maxStreak >= state.leaderboardMaxStreaks[i].maxStreak ||
+              i >= state.leaderboardMaxStreaks.length - 1) {
+            state.leaderboardMaxStreaks.splice(i, 0, payload.maxStreakData);
+            break;
+          }
+        }
+      }
+
+      state.leaderboardMaxStreaksNames = '';
+      state.leaderboardMaxStreaksScores = '';
+      for (let i = 0; i < state.leaderboardMaxStreaks.length; i++) {
+        let score = state.leaderboardMaxStreaks[i];
+        state.leaderboardMaxStreaksNames += `${score.username} (${score.accuracy || 0}%)\n`;
+        state.leaderboardMaxStreaksScores += `${score.maxStreak}\n`;
+      }
+    },
+
     menuback: state => {
       state.difficultyFilterMenuOpen = false;
       state.genreMenuOpen = false;
@@ -533,7 +594,7 @@ AFRAME.registerState({
 
         }
       }
-      
+
       state.menuDifficulties.sort(difficultyComparator);
 
       for (const d of state.menuDifficulties) {
@@ -702,7 +763,7 @@ AFRAME.registerState({
             for (i = 0; i < hits.length; i++) {
               let result = hits[i];
               challengeDataStore[result.id] = result;
-            }            
+            }
           })
       }
     },
@@ -807,7 +868,7 @@ AFRAME.registerState({
 
     'enter-vr': state => {
       state.inVR = AFRAME.utils.device.checkHeadsetConnected();
-      if (!AFRAME.utils.device.isMobile()) { 
+      if (!AFRAME.utils.device.isMobile()) {
         // gtag('event', 'entervr', {});
         if (AFRAME.utils.device.isOculusBrowser()) {
           // gtag('event', 'oculusbrowser', {});
