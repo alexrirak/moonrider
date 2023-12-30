@@ -123,106 +123,101 @@ AFRAME.registerComponent('leaderboard', {
   },
 
   addScore: function () {
-    const state = this.el.sceneEl.systems.state.state;
-
-    if (!state.isVictory || !state.inVR) { return; }
-
-    const scoreData = {
-      accuracy: state.score.accuracy,
-      challengeId: state.challenge.id,
-      gameMode: this.data.gameMode,
-      score: state.score.score,
-      username: this.username,
-      difficulty: this.data.difficulty || state.challenge.difficulty,
-      time: new Date()
-    };
-
-    if (!pr.includes(this.username.toLowerCase()) &&
-      !this.username.match(ba)) {
-      this.scoreDB.add(scoreData);
-    }
-
-    this.addEventDetail.scoreData = scoreData;
-    this.el.emit('leaderboardscoreadded', this.addEventDetail, false);
-  },
-
-  fetchScores: function (challengeId) {
-    if (this.data.gameMode === 'ride') { return; }
-
-    const state = this.el.sceneEl.systems.state.state;
-    const query = this.scoreDB
-      .where('challengeId', '==', challengeId)
-      .where(
-        'difficulty', '==',
-        state.menuSelectedChallenge.id
-          ? state.menuSelectedChallenge.difficulty
-          : state.challenge.difficulty)
-      .where('gameMode', '==', this.data.gameMode)
-      .orderBy('score', 'desc')
-      .orderBy('time', 'asc')
-      .limit(10);
-    query.get().then(snapshot => {
-      this.eventDetail.challengeId = challengeId;
-      this.scores.length = 0;
-      if (!snapshot.empty) {
-        snapshot.forEach(score => this.scores.push(score.data()));
-      }
-      this.el.sceneEl.emit('leaderboard', this.eventDetail, false);
-    }).catch(e => {
-      console.error('[firestore]', e);
-    });
+    this.add('score', score => score.score, this.scoreDB, 'scoreData', 'leaderboardscoreadded')
   },
 
   addMaxStreak: function () {
-    const state = this.el.sceneEl.systems.state.state;
+    this.add('maxStreak', score => score.maxCombo, this.maxStreakDB, 'maxStreakData', 'leaderboardmaxstreakadded')
+  },
 
-    if (!state.isVictory || !state.inVR) { return; }
+  /**
+ * This function adds a new entry to the specified database.
+ *
+ * @param {string} attributeName - The name of the attribute to be added to the database.
+ * @param {function} attributeValueExtractor - A function to extract the value of the attribute from the score object.
+ * @param {Object} db - The database to which the new entry is to be added.
+ * @param {string} resultEventAttribute - The attribute of the event detail object to which the new entry data is to be assigned.
+ * @param {string} eventToEmit - The name of the event to emit after the new entry is added.
+ */
+add: function (attributeName, attributeValueExtractor, db, resultEventAttribute, eventToEmit) {
+  const state = this.el.sceneEl.systems.state.state;
 
-    const maxStreakData = {
-      accuracy: state.score.accuracy,
-      challengeId: state.challenge.id,
-      gameMode: this.data.gameMode,
-      maxStreak: state.score.maxCombo,
-      username: this.username,
-      difficulty: this.data.difficulty || state.challenge.difficulty,
-      time: new Date()
-    };
+  // If the game state is not a victory or the game is not in VR, return without adding a new entry.
+  if (!state.isVictory || !state.inVR) { return; }
 
-    if (!pr.includes(this.username.toLowerCase()) &&
-        !this.username.match(ba)) {
-      this.maxStreakDB.add(maxStreakData);
-    }
+  // Construct the data for the new entry.
+  const data = {
+    accuracy: state.score.accuracy,
+    challengeId: state.challenge.id,
+    gameMode: this.data.gameMode,
+    [attributeName]: attributeValueExtractor(state.score),
+    username: this.username,
+    difficulty: this.data.difficulty || state.challenge.difficulty,
+    time: new Date()
+  };
 
-    this.addEventDetail.maxStreakData = maxStreakData;
-    this.el.emit('leaderboardmaxstreakadded', this.addEventDetail, false);
+  // If the username is not profane, add the new entry to the database.
+  if (!pr.includes(this.username.toLowerCase()) &&
+      !this.username.match(ba)) {
+    db.add(data);
+  }
+
+  // Assign the new entry data to the specified attribute of the event detail object.
+  this.addEventDetail[resultEventAttribute] = data;
+
+  // Emit the specified event with the event detail.
+  this.el.emit(eventToEmit, this.addEventDetail, false);
+},
+
+  fetchScores: function (challengeId) {
+    this.fetch(challengeId, this.scoreDB, 'score', this.scores, 'leaderboard');
   },
 
   fetchMaxStreaks: function (challengeId) {
-    if (this.data.gameMode === 'ride') { return; }
-
-    const state = this.el.sceneEl.systems.state.state;
-    const query = this.maxStreakDB
-        .where('challengeId', '==', challengeId)
-        .where(
-            'difficulty', '==',
-            state.menuSelectedChallenge.id
-                ? state.menuSelectedChallenge.difficulty
-                : state.challenge.difficulty)
-        .where('gameMode', '==', this.data.gameMode)
-        .orderBy('maxStreak', 'desc')
-        .orderBy('time', 'asc')
-        .limit(10);
-    query.get().then(snapshot => {
-      this.eventDetail.challengeId = challengeId;
-      this.maxStreaks.length = 0;
-      if (!snapshot.empty) {
-        snapshot.forEach(maxStreak => this.maxStreaks.push(maxStreak.data()));
-      }
-      this.el.sceneEl.emit('leaderboardMaxStreaks', this.eventDetail, false);
-    }).catch(e => {
-      console.error('[firestore]', e);
-    });
+    this.fetch(challengeId, this.maxStreakDB, 'maxStreak', this.maxStreaks, 'leaderboardMaxStreaks');
   },
+
+  /**
+ * This function fetches data from a specified database based on the provided parameters.
+ *
+ * @param {string} challengeId - The ID of the challenge for which data is to be fetched.
+ * @param {Object} db - The database from which data is to be fetched.
+ * @param {string} orderingAttributeName - The attribute based on which the data is to be ordered.
+ * @param {Array} resultArray - The array in which the fetched data is to be stored.
+ * @param {string} eventToEmit - The name of the event to emit after the data is fetched.
+ */
+fetch: function (challengeId, db, orderingAttributeName, resultArray, eventToEmit) {
+  // If the game mode is 'ride', return without fetching data.
+  if (this.data.gameMode === 'ride') { return; }
+
+  const state = this.el.sceneEl.systems.state.state;
+  // Construct the query to fetch data from the database.
+  const query = db
+      .where('challengeId', '==', challengeId)
+      .where(
+          'difficulty', '==',
+          state.menuSelectedChallenge.id
+              ? state.menuSelectedChallenge.difficulty
+              : state.challenge.difficulty)
+      .where('gameMode', '==', this.data.gameMode)
+      .orderBy(orderingAttributeName, 'desc')
+      .orderBy('time', 'asc')
+      .limit(10);
+  // Execute the query and handle the result.
+  query.get().then(snapshot => {
+    this.eventDetail.challengeId = challengeId;
+    resultArray.length = 0;
+    // If the snapshot is not empty, push the data into the attribute array.
+    if (!snapshot.empty) {
+      snapshot.forEach(score => resultArray.push(score.data()));
+    }
+    // Emit the specified event with the event detail.
+    this.el.sceneEl.emit(eventToEmit, this.eventDetail, false);
+  }).catch(e => {
+    // Log any errors that occur during the execution of the query.
+    console.error('[firestore]', e);
+  });
+},
 
   switchToMaxStreaks: function () {
     this.el.sceneEl.emit('leaderboardUpdateDisplayMode', 'MAX_STREAK');
@@ -236,44 +231,49 @@ AFRAME.registerComponent('leaderboard', {
    * Is high score?
    */
   checkLeaderboardQualify: function () {
-    const state = this.el.sceneEl.systems.state.state;
-    const score = state.score.score;
+    this.checkQualify(
+        this.scores,
+        this.el.sceneEl.systems.state.state.score.score,
+        score => score.score,
+        'leaderboardqualify'
+    );
+  },
+
+  checkMaxStreaksQualify: function () {
+    this.checkQualify(
+        this.maxStreaks,
+        this.el.sceneEl.systems.state.state.score.maxCombo,
+        score => score.maxStreak,
+        'leaderboardmaxstreaksqualify'
+    );
+  },
+
+  /**
+   * This function checks if a new score qualifies to be on the leaderboard.
+   *
+   * @param {Array} scoreArray - The array of existing scores on the leaderboard.
+   * @param {number} newScore - The new score to check.
+   * @param {function} scoreExtractor - A function to extract the score value from the score object.
+   * @param {string} eventToEmit - The name of the event to emit if the new score qualifies.
+   */
+  checkQualify: function (scoreArray, newScore, scoreExtractor, eventToEmit) {
 
     if (AFRAME.utils.getUrlParameter('dot')) { return; }
 
-    // If less than 10, then automatic high score.
-    if (this.scores.length < NUM_SCORES_DISPLAYED) {
-      this.el.sceneEl.emit('leaderboardqualify', this.scores.length, false);
+    // If the leaderboard has less than 10 scores, then the new score automatically qualifies.
+    if (scoreArray.length < NUM_SCORES_DISPLAYED) {
+      this.el.sceneEl.emit(eventToEmit, scoreArray.length, false);
       return;
     }
 
-    // Check if overtook any existing high score.
-    for (let i = 0; i < this.scores.length; i++) {
-      if (score > this.scores[i].score) {
-        this.el.sceneEl.emit('leaderboardqualify', i, false);
+    // Check if the new score is higher than any of the existing scores on the leaderboard.
+    for (let i = 0; i < scoreArray.length; i++) {
+      if (newScore > scoreExtractor(scoreArray[i])) {
+        // If the new score is higher, emit the specified event with the index of the overtaken score.
+        this.el.sceneEl.emit(eventToEmit, i, false);
         return;
       }
     }
   },
 
-  checkMaxStreaksQualify: function () {
-    const state = this.el.sceneEl.systems.state.state;
-    const maxStreak = state.score.maxCombo;
-
-    if (AFRAME.utils.getUrlParameter('dot')) { return; }
-
-    // If less than 10, then automatic max streak.
-    if (this.maxStreaks.length < NUM_SCORES_DISPLAYED) {
-      this.el.sceneEl.emit('leaderboardmaxstreaksqualify', this.maxStreaks.length, false);
-      return;
-    }
-
-    // Check if overtook any existing max streak.
-    for (let i = 0; i < this.maxStreaks.length; i++) {
-      if (maxStreak > this.maxStreaks[i].maxStreak) {
-        this.el.sceneEl.emit('leaderboardmaxstreaksqualify', i, false);
-        return;
-      }
-    }
-  }
 });
