@@ -96,7 +96,7 @@ AFRAME.registerComponent('leaderboard', {
     // Check if the game state has changed from not being a victory to being a victory
     if (!oldData.isVictory && this.data.isVictory) {
       this.checkLeaderboardQualify();
-      this.checkMaxSteaksQualify();
+      this.checkMaxStreaksQualify();
     }
 
     // If the difficulty has changed, fetch the scores for the selected challenge
@@ -256,7 +256,7 @@ AFRAME.registerComponent('leaderboard', {
     }
   },
 
-  checkMaxSteaksQualify: function () {
+  checkMaxStreaksQualify: function () {
     const state = this.el.sceneEl.systems.state.state;
     const maxStreak = state.score.maxCombo;
 
