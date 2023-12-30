@@ -466,27 +466,14 @@ AFRAME.registerState({
      * Insert new score into leaderboard locally.
      */
     leaderboardscoreadded: (state, payload) => {
-      // If leaderboard is empty, add the score directly
-      if (state.leaderboard.length === 0) {
-        state.leaderboard.push(payload.scoreData);
-      } else {
-        // Insert.
-        for (let i = 0; i < state.leaderboard.length; i++) {
-          if (payload.scoreData.score >= state.leaderboard[i].score ||
-              i >= state.leaderboard.length - 1) {
-            state.leaderboard.splice(i, 0, payload.scoreData);
-            break;
-          }
-        }
-      }
-
-      state.leaderboardNames = '';
-      state.leaderboardScores = '';
-      for (let i = 0; i < state.leaderboard.length; i++) {
-        let score = state.leaderboard[i];
-        state.leaderboardNames += `${score.username} (${score.accuracy || 0}%)\n`;
-        state.leaderboardScores += `${score.score}\n`;
-      }
+      updateLeaderboardByType(
+          "leaderboard",
+          "leaderboardNames",
+          "leaderboardScores",
+          payload.scoreData,
+          "score",
+          score => score.score
+          );
     },
 
     leaderboardsubmit: state => {
@@ -523,27 +510,14 @@ AFRAME.registerState({
     },
 
     leaderboardmaxstreakadded: (state, payload) => {
-      // If leaderboard is empty, add the score directly
-      if (state.leaderboardMaxStreaks.length === 0) {
-        state.leaderboardMaxStreaks.push(payload.maxStreakData);
-      } else {
-        // Insert.
-        for (let i = 0; i < state.leaderboardMaxStreaks.length; i++) {
-          if (payload.maxStreakData.maxStreak >= state.leaderboardMaxStreaks[i].maxStreak ||
-              i >= state.leaderboardMaxStreaks.length - 1) {
-            state.leaderboardMaxStreaks.splice(i, 0, payload.maxStreakData);
-            break;
-          }
-        }
-      }
-
-      state.leaderboardMaxStreaksNames = '';
-      state.leaderboardMaxStreaksScores = '';
-      for (let i = 0; i < state.leaderboardMaxStreaks.length; i++) {
-        let score = state.leaderboardMaxStreaks[i];
-        state.leaderboardMaxStreaksNames += `${score.username} (${score.accuracy || 0}%)\n`;
-        state.leaderboardMaxStreaksScores += `${score.maxStreak}\n`;
-      }
+      updateLeaderboardByType(
+          "leaderboardMaxStreaks",
+          "leaderboardMaxStreaksNames",
+          "leaderboardMaxStreaksScores",
+          payload.maxStreakData,
+          "maxStreak",
+          score => score.maxStreak
+          );
     },
 
     menuback: state => {
@@ -1064,4 +1038,35 @@ function updateScoreAccuracy(state) {
   state.score.accuracy = (state.score.accuracyScore / (currentNumBeats * 100)) * 100;
   state.score.accuracy = state.score.accuracy.toFixed(2);
   state.score.accuracyInt = parseInt(state.score.accuracy);
+}
+
+function updateLeaderboardByType(
+    leaderboardArrayName,
+    leaderboardNamesArrayName,
+    leaderboardScoresArrayName,
+    payloadData,
+    scoreAttributeName,
+    scoreAttributeExtractor
+) {
+  // If leaderboard is empty, add the score directly
+  if (state[leaderboardArrayName].length === 0) {
+    state[leaderboardArrayName].push(payloadData);
+  } else {
+    // Insert.
+    for (let i = 0; i < state[leaderboardArrayName].length; i++) {
+      if (payloadData[scoreAttributeName] >= state[leaderboardArrayName][i][scoreAttributeName] ||
+          i >= state[leaderboardArrayName].length - 1) {
+        state[leaderboardArrayName].splice(i, 0, payloadData);
+        break;
+      }
+    }
+  }
+
+  state[leaderboardNamesArrayName] = '';
+  state[leaderboardScoresArrayName] = '';
+  for (let i = 0; i < state[leaderboardArrayName].length; i++) {
+    let score = state[leaderboardArrayName][i];
+    state[leaderboardNamesArrayName] += `${score.username} (${score.accuracy || 0}%)\n`;
+    state[leaderboardScoresArrayName] += `${scoreAttributeExtractor(score)}\n`;
+  }
 }
