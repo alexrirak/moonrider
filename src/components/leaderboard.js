@@ -40,8 +40,9 @@ AFRAME.registerComponent('leaderboard', {
     // Set initial state for leaderboard variables
     this.qualifyingIndex = undefined;
     this.scores = [];
-    this.eventDetail = {scores: this.scores};
-    this.addEventDetail = {scoreData: undefined, index: undefined};
+    this.maxStreaks = [];
+    this.eventDetail = {scores: this.scores, maxStreaks: this.maxStreaks};
+    this.addEventDetail = {scoreData: undefined, maxStreakData: undefined, index: undefined};
 
     // Retrieve username from local storage or set default
     this.username = localStorage.getItem('moonriderusername') || 'Super Zealot';
@@ -52,66 +53,74 @@ AFRAME.registerComponent('leaderboard', {
       localStorage.setItem('moonriderusername', this.username);
     });
     this.el.addEventListener('leaderboardsubmit', this.addScore.bind(this));
+    this.el.addEventListener('leaderboardmaxstreakssubmit', this.addMaxStreak.bind(this));
+    this.el.addEventListener('leaderboardswitchtostreaks', this.switchToMaxStreaks.bind(this));
+    this.el.addEventListener('leaderboardswitchtoscore', this.switchToScores.bind(this));
   },
 
-/**
- * Called both when the component is initialized and whenever any of the component’s properties is updated
- * Handles connection to Firebase for the leaderboard
- * Fetches latest scores for the selected challenge/difficulty and checks if the score qualifies for the leaderboard
- *
- * @param {Object} oldData - The previous data of the component.
- */
-update: function (oldData) {
-  // Initialize Cloud Firestore through Firebase.
-  const firebaseConfig = {
-    apiKey: this.data.apiKey,
-    authDomain: this.data.authDomain,
-    databaseURL: this.data.databaseURL,
-    projectId: this.data.projectId,
-    storageBucket: this.data.storageBucket,
-    messagingSenderId: this.data.messagingSenderId,
-    appId: this.data.appId
-  };
-  if (!firebase.apps.length && this.data.apiKey) {
-    const firebaseApp = firebase.initializeApp(firebaseConfig);
+  /**
+   * Called both when the component is initialized and whenever any of the component’s properties is updated
+   * Handles connection to Firebase for the leaderboard
+   * Fetches latest scores for the selected challenge/difficulty and checks if the score qualifies for the leaderboard
+   *
+   * @param {Object} oldData - The previous data of the component.
+   */
+  update: function (oldData) {
+    // Initialize Cloud Firestore through Firebase.
+    const firebaseConfig = {
+      apiKey: this.data.apiKey,
+      authDomain: this.data.authDomain,
+      databaseURL: this.data.databaseURL,
+      projectId: this.data.projectId,
+      storageBucket: this.data.storageBucket,
+      messagingSenderId: this.data.messagingSenderId,
+      appId: this.data.appId
+    };
+    if (!firebase.apps.length && this.data.apiKey) {
+      const firebaseApp = firebase.initializeApp(firebaseConfig);
 
-    if (firebaseApp) {
-      // Initialize Firebase App Check
-      const appCheck = firebase.appCheck()
-      appCheck.activate(this.data.captchaKey, true)
+      if (firebaseApp) {
+        // Initialize Firebase App Check
+        const appCheck = firebase.appCheck()
+        appCheck.activate(this.data.captchaKey, true)
+      }
+
+
+      this.firestore = firebase.firestore();
+      this.firestore.settings({});
+      this.scoreDB = this.firestore.collection('scores');
+      this.maxStreakDB = this.firestore.collection('maxStreaks');
+
     }
 
+    // Check if the game state has changed from not being a victory to being a victory
+    if (!oldData.isVictory && this.data.isVictory) {
+      this.checkLeaderboardQualify();
+      this.checkMaxStreaksQualify();
+    }
 
-    this.firestore = firebase.firestore();
-    this.firestore.settings({});
-    this.db = this.firestore.collection('scores');
+    // If the difficulty has changed, fetch the scores for the selected challenge
+    if (this.data.difficulty && oldData.difficulty !== this.data.difficulty) {
+      this.fetchScores(this.data.menuSelectedChallengeId);
+      this.fetchMaxStreaks(this.data.menuSelectedChallengeId);
+      return;
+    }
 
-  }
+    // If the selected challenge has changed, fetch the scores for the new challenge
+    if (this.data.menuSelectedChallengeId &&
+        oldData.menuSelectedChallengeId !== this.data.menuSelectedChallengeId) {
+      this.fetchScores(this.data.menuSelectedChallengeId);
+      this.fetchMaxStreaks(this.data.menuSelectedChallengeId);
+      return;
+    }
 
-  // Check if the game state has changed from not being a victory to being a victory
-  if (!oldData.isVictory && this.data.isVictory) {
-    this.checkLeaderboardQualify();
-  }
-
-  // If the difficulty has changed, fetch the scores for the selected challenge
-  if (this.data.difficulty && oldData.difficulty !== this.data.difficulty) {
-    this.fetchScores(this.data.menuSelectedChallengeId);
-    return;
-  }
-
-  // If the selected challenge has changed, fetch the scores for the new challenge
-  if (this.data.menuSelectedChallengeId &&
-    oldData.menuSelectedChallengeId !== this.data.menuSelectedChallengeId) {
-    this.fetchScores(this.data.menuSelectedChallengeId);
-    return;
-  }
-
-  // If the challenge ID has changed, fetch the scores for the new challenge
-  if (this.data.challengeId && oldData.challengeId !== this.data.challengeId) {
-    this.fetchScores(this.data.challengeId);
-    return;
-  }
-},
+    // If the challenge ID has changed, fetch the scores for the new challenge
+    if (this.data.challengeId && oldData.challengeId !== this.data.challengeId) {
+      this.fetchScores(this.data.challengeId);
+      this.fetchMaxStreaks(this.data.challengeId);
+      return;
+    }
+  },
 
   addScore: function () {
     const state = this.el.sceneEl.systems.state.state;
@@ -130,7 +139,7 @@ update: function (oldData) {
 
     if (!pr.includes(this.username.toLowerCase()) &&
       !this.username.match(ba)) {
-      this.db.add(scoreData);
+      this.scoreDB.add(scoreData);
     }
 
     this.addEventDetail.scoreData = scoreData;
@@ -141,7 +150,7 @@ update: function (oldData) {
     if (this.data.gameMode === 'ride') { return; }
 
     const state = this.el.sceneEl.systems.state.state;
-    const query = this.db
+    const query = this.scoreDB
       .where('challengeId', '==', challengeId)
       .where(
         'difficulty', '==',
@@ -164,6 +173,65 @@ update: function (oldData) {
     });
   },
 
+  addMaxStreak: function () {
+    const state = this.el.sceneEl.systems.state.state;
+
+    if (!state.isVictory || !state.inVR) { return; }
+
+    const maxStreakData = {
+      accuracy: state.score.accuracy,
+      challengeId: state.challenge.id,
+      gameMode: this.data.gameMode,
+      maxStreak: state.score.maxCombo,
+      username: this.username,
+      difficulty: this.data.difficulty || state.challenge.difficulty,
+      time: new Date()
+    };
+
+    if (!pr.includes(this.username.toLowerCase()) &&
+        !this.username.match(ba)) {
+      this.maxStreakDB.add(maxStreakData);
+    }
+
+    this.addEventDetail.maxStreakData = maxStreakData;
+    this.el.emit('leaderboardmaxstreakadded', this.addEventDetail, false);
+  },
+
+  fetchMaxStreaks: function (challengeId) {
+    if (this.data.gameMode === 'ride') { return; }
+
+    const state = this.el.sceneEl.systems.state.state;
+    const query = this.maxStreakDB
+        .where('challengeId', '==', challengeId)
+        .where(
+            'difficulty', '==',
+            state.menuSelectedChallenge.id
+                ? state.menuSelectedChallenge.difficulty
+                : state.challenge.difficulty)
+        .where('gameMode', '==', this.data.gameMode)
+        .orderBy('maxStreak', 'desc')
+        .orderBy('time', 'asc')
+        .limit(10);
+    query.get().then(snapshot => {
+      this.eventDetail.challengeId = challengeId;
+      this.maxStreaks.length = 0;
+      if (!snapshot.empty) {
+        snapshot.forEach(maxStreak => this.maxStreaks.push(maxStreak.data()));
+      }
+      this.el.sceneEl.emit('leaderboardMaxStreaks', this.eventDetail, false);
+    }).catch(e => {
+      console.error('[firestore]', e);
+    });
+  },
+
+  switchToMaxStreaks: function () {
+    this.el.sceneEl.emit('leaderboardUpdateDisplayMode', 'MAX_STREAK');
+  },
+
+  switchToScores: function () {
+    this.el.sceneEl.emit('leaderboardUpdateDisplayMode', 'SCORE');
+  },
+
   /**
    * Is high score?
    */
@@ -175,7 +243,6 @@ update: function (oldData) {
 
     // If less than 10, then automatic high score.
     if (this.scores.length < NUM_SCORES_DISPLAYED) {
-      this.qualifyingIndex = this.scores.length;
       this.el.sceneEl.emit('leaderboardqualify', this.scores.length, false);
       return;
     }
@@ -183,8 +250,28 @@ update: function (oldData) {
     // Check if overtook any existing high score.
     for (let i = 0; i < this.scores.length; i++) {
       if (score > this.scores[i].score) {
-        this.qualifyingIndex = i;
         this.el.sceneEl.emit('leaderboardqualify', i, false);
+        return;
+      }
+    }
+  },
+
+  checkMaxStreaksQualify: function () {
+    const state = this.el.sceneEl.systems.state.state;
+    const maxStreak = state.score.maxCombo;
+
+    if (AFRAME.utils.getUrlParameter('dot')) { return; }
+
+    // If less than 10, then automatic max streak.
+    if (this.maxStreaks.length < NUM_SCORES_DISPLAYED) {
+      this.el.sceneEl.emit('leaderboardmaxstreaksqualify', this.maxStreaks.length, false);
+      return;
+    }
+
+    // Check if overtook any existing max streak.
+    for (let i = 0; i < this.maxStreaks.length; i++) {
+      if (maxStreak > this.maxStreaks[i].maxStreak) {
+        this.el.sceneEl.emit('leaderboardmaxstreaksqualify', i, false);
         return;
       }
     }

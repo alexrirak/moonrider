@@ -8,5 +8,8 @@ RUN npm install
 
 COPY . .
 
+ENV DEBUG_KEYBOARD=true
+ENV NODE_ENV=development
+
 EXPOSE 3000
 CMD [ "npm", "start" ]
