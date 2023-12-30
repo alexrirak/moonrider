@@ -81,6 +81,9 @@ AFRAME.registerComponent('leaderboard', {
 
       if (firebaseApp) {
         // Initialize Firebase App Check
+        if (process.env.NODE_ENV === 'development') {
+          self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        }
         const appCheck = firebase.appCheck()
         appCheck.activate(this.data.captchaKey, true)
       }
