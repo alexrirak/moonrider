@@ -771,6 +771,7 @@ AFRAME.registerState({
 
     songcomplete: state => {
       // gtag('event', 'songcomplete', { event_label: state.gameMode });
+      window.beampipe('songcomplete');
 
       // Move back to menu in Ride or Viewer Mode.
       if (state.gameMode === 'ride' || !state.inVR) {
@@ -843,9 +844,9 @@ AFRAME.registerState({
     'enter-vr': state => {
       state.inVR = AFRAME.utils.device.checkHeadsetConnected();
       if (!AFRAME.utils.device.isMobile()) {
-        // gtag('event', 'entervr', {});
+        window.beampipe('entervr');
         if (AFRAME.utils.device.isOculusBrowser()) {
-          // gtag('event', 'oculusbrowser', {});
+          window.beampipe('oculusbrowser');
         }
       }
     },
