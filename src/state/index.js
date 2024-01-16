@@ -39,6 +39,8 @@ const SKIP_INTRO = AFRAME.utils.getUrlParameter('skipintro') === 'true';
 
 const colorScheme = localStorage.getItem('colorScheme') || 'default';
 
+const statDistance = localStorage.getItem('statDistance') || 'CLOSE';
+
 let favorites = localStorage.getItem('favorites-v2');
 if (favorites) {
   try {
@@ -181,7 +183,8 @@ AFRAME.registerState({
       urlPage: 0,
     },
     searchResultsPage: [],
-    speed: 10
+    speed: 10,
+    statDistance: statDistance,
   },
 
   handlers: {
@@ -882,7 +885,17 @@ AFRAME.registerState({
     ziploaderstart: state => {
       state.challenge.isBeatsPreloaded = false;
       state.isZipFetching = true;
-    }
+    },
+
+    statsDistanceClose: (state) => {
+      state.statDistance = 'CLOSE';
+      localStorage.setItem('statDistance', 'CLOSE');
+    },
+
+    statsDistanceFar: (state) => {
+      state.statDistance = 'FAR';
+      localStorage.setItem('statDistance', 'FAR');
+    },
   },
 
   /**
