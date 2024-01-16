@@ -5,6 +5,8 @@
 
 <a-entity
   id="scoreContainer"
+  stat-distance-positioner
+  bind__stat-distance-positioner="statDistance: statDistance"
   bind__score-texts="isLoading: isLoading"
   bind__visible="score.active"
   render-order="score">

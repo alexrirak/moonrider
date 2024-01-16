@@ -33,4 +33,39 @@
       position="0 -0.35 0.1"
       render-order="menutext"></a-entity>
   </a-entity>
+
+  <a-entity id="statsOptionsContainer" position="0 -0.75 0">
+    <a-entity id="statsDistanceTitle" mixin="font" text="align: center; value: STAT DISTANCE; width: 2"></a-entity>
+
+    <a-entity
+      id="statsDistanceSelection"
+      mixin="font"
+      text="align: center; color: #CCC; width: 1"
+      position="0 -0.06 0.01"
+      render-order="menutext"
+      bind__text="color: colorPrimary; value: statDistance" ></a-entity>
+
+    <a-entity
+            id="statsDistanceOptions"
+            mixin="clickSoundUI hoverSoundUI"
+            position="0 -0.175 0">
+      <a-entity id="statsDistanceCloseButton"
+                position="-0.3 0 0.002"
+                mixin="leaderboardMenuButton"
+                bind-toggle__raycastable="optionsMenuOpen"
+                proxy-event="event: click; to: a-scene; as: statsDistanceClose">
+        <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 26; value: CLOSE" position="0 -0.055 0.01"></a-entity>
+      </a-entity>
+
+      <a-entity id="statsDistanceFarButton"
+                position="0.3 0 0.002"
+                mixin="leaderboardMenuButton"
+                bind-toggle__raycastable="optionsMenuOpen"
+                proxy-event="event: click; to: a-scene; as: statsDistanceFar">
+        <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 26; value: FAR" position="0 -0.055 0.01"></a-entity>
+      </a-entity>
+    </a-entity>
+
+  </a-entity>
+
 </a-entity>
