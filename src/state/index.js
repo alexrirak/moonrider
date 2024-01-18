@@ -40,7 +40,7 @@ const SKIP_INTRO = AFRAME.utils.getUrlParameter('skipintro') === 'true';
 const colorScheme = localStorage.getItem('colorScheme') || 'default';
 
 const statDistance = localStorage.getItem('statDistance') || 'CLOSE';
-const progressStyle = localStorage.getItem('progressStyle') || 'COUNTER';
+const progressStyle = localStorage.getItem('progressStyle') || 'BAR';
 
 let favorites = localStorage.getItem('favorites-v2');
 if (favorites) {
