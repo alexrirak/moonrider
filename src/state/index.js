@@ -40,6 +40,7 @@ const SKIP_INTRO = AFRAME.utils.getUrlParameter('skipintro') === 'true';
 const colorScheme = localStorage.getItem('colorScheme') || 'default';
 
 const statDistance = localStorage.getItem('statDistance') || 'CLOSE';
+const progressStyle = localStorage.getItem('progressStyle') || 'COUNTER';
 
 let favorites = localStorage.getItem('favorites-v2');
 if (favorites) {
@@ -185,6 +186,7 @@ AFRAME.registerState({
     searchResultsPage: [],
     speed: 10,
     statDistance: statDistance,
+    progressStyle: progressStyle,
   },
 
   handlers: {
@@ -896,6 +898,22 @@ AFRAME.registerState({
       state.statDistance = 'FAR';
       localStorage.setItem('statDistance', 'FAR');
     },
+
+    statsDistanceVeryFar: (state) => {
+      state.statDistance = 'VERY_FAR';
+      localStorage.setItem('statDistance', 'VERY_FAR');
+    },
+
+    progressStyleCounter: (state) => {
+      state.progressStyle = 'COUNTER';
+      localStorage.setItem('progressStyle', 'COUNTER');
+    },
+
+    progressStyleBar: (state) => {
+      state.progressStyle = 'BAR';
+      localStorage.setItem('progressStyle', 'BAR');
+    },
+
   },
 
   /**
