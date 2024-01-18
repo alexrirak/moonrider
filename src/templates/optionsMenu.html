@@ -35,35 +35,89 @@
   </a-entity>
 
   <a-entity id="statsOptionsContainer" position="0 -0.75 0">
-    <a-entity id="statsDistanceTitle" mixin="font" text="align: center; value: STAT DISTANCE; width: 2"></a-entity>
-
-    <a-entity
-      id="statsDistanceSelection"
-      mixin="font"
-      text="align: center; color: #CCC; width: 1"
-      position="0 -0.06 0.01"
-      render-order="menutext"
-      bind__text="color: colorPrimary; value: statDistance" ></a-entity>
+    <a-entity id="gameStatsTitle" mixin="font" text="align: center; value: GAME STATS; width: 2"></a-entity>
 
     <a-entity
             id="statsDistanceOptions"
-            mixin="clickSoundUI hoverSoundUI"
             position="0 -0.175 0">
+
+      <a-entity
+              id="statsDistanceTitle"
+              mixin="font"
+              bind__text="color: colorPrimary"
+              text="align: center; value: STAT DISTANCE; width: 1.5"
+              position="-0.9 -0.06 0.002"
+      ></a-entity>
+
+      <!-- START CLOSE BUTTON -->
       <a-entity id="statsDistanceCloseButton"
                 position="-0.3 0 0.002"
-                mixin="leaderboardMenuButton"
+                mixin="optionsMenuButton"
                 bind-toggle__raycastable="optionsMenuOpen"
+                bind__options-button-selector="selected: statDistance == 'CLOSE'"
                 proxy-event="event: click; to: a-scene; as: statsDistanceClose">
         <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 26; value: CLOSE" position="0 -0.055 0.01"></a-entity>
       </a-entity>
+      <!-- END CLOSE BUTTON -->
 
+      <!-- START FAR BUTTON -->
       <a-entity id="statsDistanceFarButton"
                 position="0.3 0 0.002"
-                mixin="leaderboardMenuButton"
+                mixin="optionsMenuButton"
                 bind-toggle__raycastable="optionsMenuOpen"
+                bind__options-button-selector="selected: statDistance == 'FAR'"
                 proxy-event="event: click; to: a-scene; as: statsDistanceFar">
         <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 26; value: FAR" position="0 -0.055 0.01"></a-entity>
       </a-entity>
+      <!-- END FAR BUTTON -->
+
+      <!-- START VERY FAR BUTTON -->
+      <a-entity id="statsDistanceVeryFarButton"
+                position="0.9 0 0.002"
+                mixin="optionsMenuButton"
+                bind-toggle__raycastable="optionsMenuOpen"
+                bind__options-button-selector="selected: statDistance == 'VERY_FAR'"
+                proxy-event="event: click; to: a-scene; as: statsDistanceVeryFar">
+        <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 26; value: VERY FAR" position="0 -0.055 0.01"></a-entity>
+      </a-entity>
+      <!-- END VERY FAR BUTTON -->
+
+    </a-entity>
+
+    <a-entity
+            id="statsProgressStyleOptions"
+            position="0 -0.35 0">
+
+      <a-entity
+              id="statsProgressStyleTitle"
+              mixin="font"
+              bind__text="color: colorPrimary"
+              text="align: center; value: PROGRESS\n INDICATOR; width: 1.5"
+              position="-0.9 -0.06 0.002"
+      ></a-entity>
+
+      <!-- START BAR BUTTON -->
+      <a-entity id="statsProgressStyleBarButton"
+                position="-0.3 0 0.002"
+                mixin="optionsMenuButton"
+                bind-toggle__raycastable="optionsMenuOpen"
+                bind__options-button-selector="selected: progressStyle == 'BAR'"
+                proxy-event="event: click; to: a-scene; as: progressStyleBar">
+        <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 26; value: BAR" position="0 -0.055 0.01"></a-entity>
+      </a-entity>
+      <!-- END BAR BUTTON -->
+
+      <!-- START COUNTER BUTTON -->
+      <a-entity id="statsProgressStyleCounterButton"
+                position="0.3 0 0.002"
+                mixin="optionsMenuButton"
+                bind-toggle__raycastable="optionsMenuOpen"
+                bind__options-button-selector="selected: progressStyle == 'COUNTER'"
+                proxy-event="event: click; to: a-scene; as: progressStyleCounter">
+        <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 26; value: COUNTER" position="0 -0.055 0.01"></a-entity>
+      </a-entity>
+      <!-- END COUNTER BUTTON -->
+
     </a-entity>
 
   </a-entity>

@@ -3,13 +3,12 @@
   mixin="font"
   text="lineHeight: 40; color: #FAFAFA; letterSpacing: -2; align: center; opacity: 0.7"></a-mixin>
 
-<!--  bind__visible="score.active" -->
 <a-entity
   id="scoreContainer"
   stat-distance-positioner
   bind__stat-distance-positioner="statDistance: statDistance"
   bind__score-texts="isLoading: isLoading"
-
+  bind__visible="score.active"
   render-order="score">
 
   <a-entity

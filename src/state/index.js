@@ -898,6 +898,22 @@ AFRAME.registerState({
       state.statDistance = 'FAR';
       localStorage.setItem('statDistance', 'FAR');
     },
+
+    statsDistanceVeryFar: (state) => {
+      state.statDistance = 'VERY_FAR';
+      localStorage.setItem('statDistance', 'VERY_FAR');
+    },
+
+    progressStyleCounter: (state) => {
+      state.progressStyle = 'COUNTER';
+      localStorage.setItem('progressStyle', 'COUNTER');
+    },
+
+    progressStyleBar: (state) => {
+      state.progressStyle = 'BAR';
+      localStorage.setItem('progressStyle', 'BAR');
+    },
+
   },
 
   /**
